@@ -1,3 +1,4 @@
+import html
 import os
 import sqlite3
 import statistics
@@ -188,6 +189,9 @@ def val(v, fmt=None, fallback="—"):
 
 
 def card(label, value, sub="", color="#f1f5f9"):
+    label = html.escape(str(label))
+    value = html.escape(str(value))
+    sub = html.escape(str(sub))
     sub_html = f'<div class="card-sub">{sub}</div>' if sub else ""
     return f"""
     <div class="card">
@@ -198,6 +202,8 @@ def card(label, value, sub="", color="#f1f5f9"):
 
 
 def gauge_card(label, pct, sub=""):
+    label = html.escape(str(label))
+    sub = html.escape(str(sub))
     pct = max(0, min(100, float(pct)))
     color = "#4ade80" if pct > 20 else "#ffaa00" if pct > 10 else "#ef4444"
 
