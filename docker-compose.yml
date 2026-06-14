@@ -65,6 +65,8 @@ services:
     restart: unless-stopped
     ports:
       - "8502:8501"
+    environment:
+      - VIN=${VIN}
     volumes:
       - ./database:/data:ro
       - ./dashboard:/app

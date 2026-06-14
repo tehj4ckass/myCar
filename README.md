@@ -131,6 +131,7 @@ Dashboard is available at `http://<pi-ip>:8502`
 | `MQTT_PASSWORD` | all | MQTT broker password |
 | `ABRP_TOKEN` | eudata | ABRP user token (optional) |
 | `POLL_INTERVAL_SECONDS` | eudata | Poll interval in seconds (default: 900) |
+| `VIN` | dashboard | Your vehicle VIN (required) |
 
 ---
 
@@ -206,13 +207,13 @@ This stack was built for a **VW ID.3 (58 kWh, 2021)**. Several values are hardco
 
 ### VIN
 
-Your VIN appears in three dashboard pages. Search and replace `WVWZZZE000000000` with your own:
+Set your VIN in `.env` — the dashboard reads it from the environment at startup:
 
-| File | Line | Value |
-|---|---|---|
-| `dashboard/pages/uebersicht.py` | 11 | `VIN = "WVWZZZE000000000"` |
-| `dashboard/pages/laden.py` | 11 | `VIN = "WVWZZZE000000000"` |
-| `dashboard/pages/trips.py` | 10 | `VIN = "WVWZZZE000000000"` |
+```env
+VIN=WVWZZZE000000000
+```
+
+The `VIN` environment variable is passed to the dashboard container via `docker-compose.yml`. No source file edits needed.
 
 ### Battery capacity
 

@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from datetime import datetime, timezone
 
@@ -8,7 +9,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 DB_PATH = "/data/id3_data.db"
-VIN = "YOUR_VIN_HERE"
+VIN = os.environ.get("VIN", "YOUR_VIN_HERE")
 BATTERY_KWH = 58
 COST_AC = 0.15
 COST_DC = 0.65

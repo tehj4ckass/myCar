@@ -183,8 +183,11 @@ def build_topics(vin: str, nickname: str, data_points: list[dict]) -> dict[str, 
 
     charge_type = field("charging_state_report.charge_type")
     if charge_type is not None:
-        topics[f"{base}/charging/settings/charge_type"] = charge_type.lower()
-        topics[f"{base}/charging/type"] = charge_type.lower()
+        ct = charge_type.lower()
+        if ct.startswith("charge_type_"):
+            ct = ct[len("charge_type_"):]
+        topics[f"{base}/charging/settings/charge_type"] = ct
+        topics[f"{base}/charging/type"] = ct
 
     # Estimated charge completion: remaining minutes → ISO timestamp
     remaining_mins_raw = field("battery_state_report.remaining_charging_time_complete")
