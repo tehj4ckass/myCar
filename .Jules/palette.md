@@ -1,0 +1,3 @@
+## 2024-06-15 - Streamlit Sidebar Link Accessibility
+**Learning:** In Streamlit, custom HTML components injected into the sidebar via `st.sidebar.markdown(..., unsafe_allow_html=True)` can create redundant tab stops and confusing screen reader experiences when using multiple adjacent links (like a title link and a separate image link pointing to the same place).
+**Action:** When injecting custom HTML for navigation components, ensure that text links have an explicit `aria-label` for context, and decorative or redundant image links are removed from the accessibility tree using `tabindex="-1"` and `aria-hidden="true"`. Also, provide an `alt` attribute for images, even when hidden, to maintain semantic HTML.
