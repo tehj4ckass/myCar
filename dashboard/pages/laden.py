@@ -11,8 +11,8 @@ from streamlit_autorefresh import st_autorefresh
 DB_PATH = "/data/id3_data.db"
 VIN = os.environ.get("VIN", "YOUR_VIN_HERE")
 BATTERY_KWH = 58
-COST_AC = 0.15
-COST_DC = 0.65
+COST_AC = 0.25
+COST_DC = 0.60
 
 st.markdown("""
 <style>

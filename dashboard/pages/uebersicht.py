@@ -12,7 +12,7 @@ DB_PATH = "/data/id3_data.db"
 VIN         = os.environ.get("VIN", "YOUR_VIN_HERE")
 BATTERY_KWH = 58
 COST_AC     = 0.25
-COST_DC     = 0.65
+COST_DC     = 0.60
 
 MONTHS_DE = {
     1: "Januar", 2: "Februar", 3: "März",     4: "April",
