@@ -29,7 +29,7 @@
 
 ---
 
-## Dashboard
+## Dashboard (German)
 
 Four pages, dark-themed, auto-refresh every 5 minutes:
 
