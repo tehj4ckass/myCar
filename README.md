@@ -274,6 +274,9 @@ _MAX_CURRENT_MAP = {
 
 This project builds on the work of several open source projects and communities:
 
+### [carconnectivity](https://github.com/tillsteinbach/carconnectivity)
+The original data stack this project was built on. [@tillsteinbach](https://github.com/tillsteinbach)'s `carconnectivity-mqtt` image handled VW WeConnect API polling and MQTT publishing from day one — the entire topic structure and SQLite schema in this project are inherited from that foundation. VW killed the underlying API on 27 May 2026, but all historical data collected via carconnectivity is preserved in the database.
+
 ### [hass-vw-eu-data-act](https://github.com/cgerke/hass-vw-eu-data-act)
 The `eudata/api.py` OIDC authentication flow and EU Data Act portal client are a standalone adaptation of this Home Assistant integration by [@cgerke](https://github.com/cgerke). MIT licensed. All credit for reverse-engineering the VW EU Data Act portal API goes to the original authors.
 
