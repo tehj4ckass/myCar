@@ -194,7 +194,7 @@ All MQTT messages are stored in `database/id3_data.db` (SQLite). Historical data
 
 ---
 
-## Battery Health (SoH)
+## Battery Health (SoH) (experimental!)
 
 The dashboard estimates State of Health from real charging session data: energy delivered (calculated from charging power × time) divided by the SOC delta, compared against the 58 kWh nominal capacity. Requires sessions with ≥ 20% SOC delta. Displayed as a monthly trend.
 
@@ -206,13 +206,13 @@ This stack was built for a **VW ID.3 (58 kWh, 2021)**. Several values are hardco
 
 ### VIN
 
-Your VIN appears in three dashboard pages. Search and replace `YOUR_VIN_HERE` with your own:
+Your VIN appears in three dashboard pages. Search and replace `WVWZZZE000000000` with your own:
 
 | File | Line | Value |
 |---|---|---|
-| `dashboard/pages/uebersicht.py` | 11 | `VIN = "YOUR_VIN_HERE"` |
-| `dashboard/pages/laden.py` | 11 | `VIN = "YOUR_VIN_HERE"` |
-| `dashboard/pages/trips.py` | 10 | `VIN = "YOUR_VIN_HERE"` |
+| `dashboard/pages/uebersicht.py` | 11 | `VIN = "WVWZZZE000000000"` |
+| `dashboard/pages/laden.py` | 11 | `VIN = "WVWZZZE000000000"` |
+| `dashboard/pages/trips.py` | 10 | `VIN = "WVWZZZE000000000"` |
 
 ### Battery capacity
 
