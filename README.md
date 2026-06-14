@@ -91,14 +91,31 @@ The eudata connector pushes live SOC and charging state to [A Better Route Plann
 
 ## Setup
 
-### 1. Prerequisites
+### 1. Configure the VW EU Data Act Portal
+
+The data source is VW's free EU Data Act portal — mandated by law, no subscription needed. You need to activate continuous data delivery once before this stack can receive anything.
+
+> **Requirements:** Your VW ID account must hold the **Primary User** role for the vehicle (i.e. the account the car is registered to).
+
+1. Go to [eu-data-act.drivesomethinggreater.com](https://eu-data-act.drivesomethinggreater.com) and log in with your VW ID credentials (same as the VW app)
+2. Your vehicle should appear automatically — if not, check that you are the Primary User in the VW app under *Account → Manage users*
+3. Click **"Get customised data"** (or similar, UI may vary) and select your vehicle
+4. Choose **"All data clusters"** to enable everything this stack can use
+5. Set frequency to **continuous** and duration to your preference (e.g. 1 year)
+6. Confirm the request — data delivery starts within a few minutes
+
+The `eudata` connector polls the portal every 15 minutes and downloads the latest ZIP dataset automatically. No further manual steps needed.
+
+> **Note:** The portal occasionally returns HTTP 500 errors server-side (VW infrastructure issue). The connector retries automatically on the next poll cycle — no action needed.
+
+---
+
+### 2. Prerequisites
 
 - Raspberry Pi (tested on Pi 5, aarch64) with Docker + Docker Compose
-- VW ID account (same credentials as the VW app)
-- VW EU Data Act portal configured: [eu-data-act.drivesomethinggreater.com](https://eu-data-act.drivesomethinggreater.com)
-  - Log in → set up a **continuous data request** for your vehicle
+- VW ID account configured as above
 
-### 2. Clone & configure
+### 3. Clone & configure
 
 ```bash
 git clone https://github.com/yourusername/myCar.git
@@ -202,6 +219,69 @@ All MQTT messages are stored in `database/id3_data.db` (SQLite). Historical data
 ## Battery Health (SoH)
 
 The dashboard estimates State of Health from real charging session data: energy delivered (calculated from charging power × time) divided by the SOC delta, compared against the 58 kWh nominal capacity. Requires sessions with ≥ 20% SOC delta. Displayed as a monthly trend.
+
+---
+
+## Adapting for Other Vehicles
+
+This stack was built for a **VW ID.3 (58 kWh, 2021)**. Several values are hardcoded and need updating if you use a different vehicle or live somewhere with different electricity prices.
+
+### VIN
+
+Your VIN appears in three dashboard pages. Search and replace `YOUR_VIN_HERE` with your own:
+
+| File | Line | Value |
+|---|---|---|
+| `dashboard/pages/uebersicht.py` | 11 | `VIN = "YOUR_VIN_HERE"` |
+| `dashboard/pages/laden.py` | 11 | `VIN = "YOUR_VIN_HERE"` |
+| `dashboard/pages/trips.py` | 10 | `VIN = "YOUR_VIN_HERE"` |
+
+### Battery capacity
+
+Used to calculate energy (kWh) from SOC deltas and for the SoH estimate:
+
+| File | Line | Value |
+|---|---|---|
+| `dashboard/pages/uebersicht.py` | 12 | `BATTERY_KWH = 58` |
+| `dashboard/pages/laden.py` | 12 | `BATTERY_KWH = 58` |
+| `dashboard/pages/trips.py` | 11 | `BATTERY_KWH = 58` |
+
+For reference: ID.3 Pure = 45 kWh, ID.3 Pro = 58 kWh, ID.3 Pro S = 77 kWh.
+
+### Electricity cost estimates
+
+Used only for the cost display in the Ladevorgänge and Übersicht pages — adjust to your local tariff:
+
+| File | Lines | Values |
+|---|---|---|
+| `dashboard/pages/uebersicht.py` | 13–14 | `COST_AC = 0.25` · `COST_DC = 0.65` (€/kWh) |
+| `dashboard/pages/laden.py` | 13–14 | `COST_AC = 0.15` · `COST_DC = 0.65` (€/kWh) |
+
+### Max AC charging current (eudata connector)
+
+The EU Data Act portal returns enum strings for the max current setting. The mapping in `eudata/connector.py` (line 79) uses the ID.3 values of 16 A (maximum) and 8 A (reduced). Other VW/Skoda/Audi EVs may differ — check your vehicle spec:
+
+```python
+_MAX_CURRENT_MAP = {
+    "max_charge_current_ac_maximum": "16",   # adapt if your car's max differs
+    "max_charge_current_ac_reduced": "8",    # adapt if your car's reduced differs
+}
+```
+
+---
+
+## Credits
+
+This project builds on the work of several open source projects and communities:
+
+### [hass-vw-eu-data-act](https://github.com/cgerke/hass-vw-eu-data-act)
+The `eudata/api.py` OIDC authentication flow and EU Data Act portal client are a standalone adaptation of this Home Assistant integration by [@cgerke](https://github.com/cgerke). MIT licensed. All credit for reverse-engineering the VW EU Data Act portal API goes to the original authors.
+
+### [volkswagencarnet](https://github.com/robinostlund/volkswagencarnet)
+The `vwcarnet/` service uses this library by [@robinostlund](https://github.com/robinostlund) and contributors. It provides the WeConnect API client that enables full vehicle telemetry (GPS, doors, climate, fine-grained charging data) when VW's unofficial API is accessible. MIT licensed.
+
+### Community
+Authentication flows, field name mappings, and API behavior were pieced together from discussions in the Home Assistant community, the volkswagencarnet issue tracker, and various EV enthusiast forums. VW does not provide official developer documentation for any of these APIs.
 
 ---
 
