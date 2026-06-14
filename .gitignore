@@ -1,4 +1,23 @@
+# ── Credentials & secrets ──────────────────────────────────────────────────────
 .env
-database/
+
+# ── Database (personal vehicle data – keep local only) ─────────────────────────
+database/*.db
+
+# ── Mosquitto runtime state ────────────────────────────────────────────────────
 mosquitto/data/
 mosquitto/log/
+
+# ── carconnectivity (deprecated – contained auth tokens) ───────────────────────
+carconnectivity/carconnectivity.json
+carconnectivity/id3_data*.db
+
+# ── Python cache ───────────────────────────────────────────────────────────────
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# ── Scratch / temp ─────────────────────────────────────────────────────────────
+dashboard/scratch/
+*.log
