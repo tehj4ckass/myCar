@@ -1,0 +1,3 @@
+volkswagencarnet>=5.4.11
+aiohttp
+paho-mqtt

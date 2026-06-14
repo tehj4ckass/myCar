@@ -1,0 +1,40 @@
+{
+    "carConnectivity": {
+        "log_level": "info",
+        "connectors": [
+            {
+                "type": "volkswagen",
+                "config": {
+                    "interval": 300,
+                    "username": "${VW_USERNAME}",
+                    "password": "${VW_PASSWORD}",
+                    "force_enable_access": true
+                }
+            }
+        ],
+        "plugins": [
+            {
+                "type": "mqtt",
+                "config": {
+                    "broker": "mosquitto",
+                    "port": 1883,
+                    "clientid": "id3_connector",
+                    "username": "${MQTT_USER}",
+                    "password": "${MQTT_PASSWORD}",
+                    "retain_on_disconnect": false,
+                    "republish_on_update": true
+                }
+            },
+            {
+                "type": "abrp",
+                "config": {
+                    "tokens": {
+                        "YOUR_VIN_HERE": "${ABRP_TOKEN}"
+                    },
+                    "interval": 60,
+                    "hide_location": false
+                }
+            }
+        ]
+    }
+}
