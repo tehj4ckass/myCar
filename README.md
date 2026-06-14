@@ -13,29 +13,7 @@
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Raspberry Pi                             │
-│                                                                 │
-│  ┌──────────────┐     MQTT      ┌──────────────┐               │
-│  │   eudata     │ ────────────► │  mosquitto   │               │
-│  │  connector   │  (retain=T)   │   broker     │               │
-│  │              │               └──────┬───────┘               │
-│  │ VW EU Data   │                      │ subscribe             │
-│  │ Act Portal   │               ┌──────▼───────┐               │
-│  │ (15 min)     │               │   sqlite     │               │
-│  └──────────────┘               │   catcher    │               │
-│                                 │              │               │
-│  ┌──────────────┐               │  id3_data.db │               │
-│  │  vwcarnet    │               └──────┬───────┘               │
-│  │  connector   │  (disabled –         │ query                 │
-│  │  [fallback]  │   VW API broken)     │                       │
-│  └──────────────┘               ┌──────▼───────┐               │
-│                                 │  Streamlit   │ :8502         │
-│                                 │  dashboard   │ ──────► 🌐    │
-│                                 └──────────────┘               │
-└─────────────────────────────────────────────────────────────────┘
-```
+![Architecture](docs/architecture.png)
 
 ---
 

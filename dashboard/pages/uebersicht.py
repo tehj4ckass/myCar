@@ -300,7 +300,11 @@ def monthly_stats(n: int = 6) -> list:
         ORDER BY timestamp ASC
     """).fetchall()
 
-    ACTIVE = ("charging", "charge")
+    ACTIVE = (
+        "charging", "charge",
+        "charge_state_charging", "charge_state_charging_hv_battery",
+        "charge_state_conservation_charging", "charge_state_conserving",
+    )
     energy_by_month: dict = {}
     cost_by_month:   dict = {}
     soh_samples:     dict = {}
@@ -332,8 +336,8 @@ def monthly_stats(n: int = 6) -> list:
                         energy_by_month[month] = energy_by_month.get(month, 0) + energy
                         cost_by_month[month]   = cost_by_month.get(month, 0) + cost
 
-                        # SoH estimate for sessions with enough delta and power data
-                        if delta >= 20 and power_pts:
+                        # SoH estimate: need ≥3 power readings for reliable energy calc
+                        if delta >= 20 and len(power_pts) >= 3:
                             try:
                                 s_dt  = pd.to_datetime(session_start, format="ISO8601", utc=True)
                                 e_dt  = pd.to_datetime(ts_str, format="ISO8601", utc=True)
@@ -348,11 +352,12 @@ def monthly_stats(n: int = 6) -> list:
                                         dt_h = (t1 - t0).total_seconds() / 3600.0
                                         if dt_h > 0:
                                             energy_kwh += p0 * dt_h
-                                            
+
                                     max_p = max(p for _, p in power_pts)
                                     eff   = 0.94 if max_p > 11 else 0.88
                                     cap   = energy_kwh * eff / (delta / 100)
-                                    if 30 < cap < 100:
+                                    # cap must be physically plausible (±15% of nominal)
+                                    if BATTERY_KWH * 0.75 < cap < BATTERY_KWH * 1.15:
                                         soh_samples.setdefault(month, []).append(
                                             cap / BATTERY_KWH * 100
                                         )
@@ -490,6 +495,7 @@ c_chg, c_empty = st.columns([2, 1])
 _CHARGE_LABELS = {
     "charging": "⚡ Lädt", "off": "Inaktiv", "invalid": "—",
     "charge_state_charging": "⚡ Lädt",
+    "charge_state_charging_hv_battery": "⚡ Lädt",
     "charge_state_conservation_charging": "⚡ Erhaltung",
     "charge_state_conserving": "⚡ Erhaltung",
     "charge_state_ready_for_charging": "Bereit",

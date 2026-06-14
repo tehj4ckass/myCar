@@ -61,6 +61,7 @@ def pub(client: mqtt.Client, topic: str, value) -> None:
 # EU Data Act enum → dashboard-compatible charging state
 _CHARGE_STATE_MAP = {
     "charge_state_charging":                            "charging",
+    "charge_state_charging_hv_battery":                 "charging",
     "charge_state_conservation_charging":               "charging",
     "charge_state_conserving":                          "charging",
     "charge_state_ready_for_charging":                  "off",

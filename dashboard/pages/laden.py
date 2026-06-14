@@ -106,66 +106,112 @@ def history(suffix, limit=2000):
     return df.dropna(subset=["value"])
 
 
+_CHARGING_STATE_VALUES = {
+    "charging", "charge",
+    "charge_state_charging", "charge_state_charging_hv_battery",
+    "charge_state_conservation_charging", "charge_state_conserving",
+}
+
+def _is_active(state: str) -> bool:
+    return state.strip().lower() in _CHARGING_STATE_VALUES
+
+
+def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
+    def soc_at(t):
+        r = conn.execute(
+            "SELECT payload FROM messages WHERE topic LIKE '%drives/primary/level' "
+            "AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (t,),
+        ).fetchone()
+        return float(r[0]) if r else None
+
+    def _parse_ts(ts):
+        dt = datetime.fromisoformat(ts)
+        return dt.replace(tzinfo=None) if dt.tzinfo else dt
+
+    start_dt = _parse_ts(session_start)
+    end_dt   = _parse_ts(ts_str)
+    duration = end_dt - start_dt
+    if duration.total_seconds() < 60:
+        return None
+
+    s_soc = soc_at(session_start)
+    e_soc = soc_at(ts_str)
+    energy = round((e_soc - s_soc) * BATTERY_KWH / 100, 2) if s_soc and e_soc else None
+
+    pwr_rows = conn.execute(
+        f"SELECT payload FROM messages WHERE topic LIKE '%{VIN}/charging/power' "
+        f"AND timestamp BETWEEN ? AND ?", (session_start, ts_str),
+    ).fetchall()
+    avg_pwr = (
+        sum(float(r[0]) for r in pwr_rows if r[0]) / len(pwr_rows)
+        if pwr_rows else None
+    )
+
+    type_rows = conn.execute(
+        f"SELECT payload FROM messages WHERE topic LIKE '%{VIN}/charging/type' "
+        f"AND timestamp BETWEEN ? AND ?", (session_start, ts_str),
+    ).fetchall()
+    def _norm_type(v):
+        v = v.strip().lower()
+        if v.startswith("charge_type_"):
+            v = v[len("charge_type_"):]
+        return v
+    types = [_norm_type(r[0]) for r in type_rows if r[0].strip() not in ("invalid", "")]
+    charge_type = max(set(types), key=types.count) if types else "ac"
+    rate = COST_DC if "dc" in charge_type else COST_AC
+    cost = round(energy * rate, 2) if energy else None
+
+    return {
+        "start": start_dt, "end": end_dt, "duration": duration,
+        "start_soc": s_soc, "end_soc": e_soc,
+        "energy_kwh": energy, "avg_power": round(avg_pwr, 1) if avg_pwr else None,
+        "charge_type": charge_type, "cost": cost,
+    }
+
+
 def detect_sessions():
-    rows = get_conn().execute(
+    conn = get_conn()
+
+    # ── Primary: state-transition based detection ──────────────────────────────
+    state_rows = conn.execute(
         f"SELECT timestamp, payload FROM messages WHERE topic LIKE '%{VIN}/charging/state' ORDER BY timestamp"
     ).fetchall()
 
-    sessions, session_start, prev = [], None, None
-    ACTIVE = ("charging", "charge")
+    sessions = []
+    session_start, prev = None, None
+    state_intervals = []   # track covered time windows for power-fallback dedup
 
-    for ts_str, raw_state in rows:
-        state = raw_state.strip().lower()
-        if prev not in ACTIVE and state in ACTIVE:
+    for ts_str, raw_state in state_rows:
+        active = _is_active(raw_state)
+        if not _is_active(prev or "") and active:
             session_start = ts_str
-        elif prev in ACTIVE and state not in ACTIVE and session_start:
-            conn = get_conn()
-
-            def soc_at(t):
-                r = conn.execute(
-                    "SELECT payload FROM messages WHERE topic LIKE '%drives/primary/level' "
-                    "AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (t,),
-                ).fetchone()
-                return float(r[0]) if r else None
-
-            def _parse_ts(ts):
-                dt = datetime.fromisoformat(ts)
-                return dt.replace(tzinfo=None) if dt.tzinfo else dt
-
-            start_dt = _parse_ts(session_start)
-            end_dt   = _parse_ts(ts_str)
-            s_soc    = soc_at(session_start)
-            e_soc    = soc_at(ts_str)
-            duration = end_dt - start_dt
-            energy   = round((e_soc - s_soc) * BATTERY_KWH / 100, 2) if s_soc and e_soc else None
-
-            pwr_rows = conn.execute(
-                f"SELECT payload FROM messages WHERE topic LIKE '%{VIN}/charging/power' "
-                f"AND timestamp BETWEEN ? AND ?", (session_start, ts_str),
-            ).fetchall()
-            avg_pwr = (
-                sum(float(r[0]) for r in pwr_rows if r[0]) / len(pwr_rows)
-                if pwr_rows else None
-            )
-
-            type_rows = conn.execute(
-                f"SELECT payload FROM messages WHERE topic LIKE '%{VIN}/charging/type' "
-                f"AND timestamp BETWEEN ? AND ?", (session_start, ts_str),
-            ).fetchall()
-            types = [r[0].strip() for r in type_rows if r[0].strip() not in ("invalid", "")]
-            charge_type = max(set(types), key=types.count) if types else "ac"
-            rate = COST_DC if "dc" in charge_type.lower() else COST_AC
-            cost = round(energy * rate, 2) if energy else None
-
-            sessions.append({
-                "start": start_dt, "end": end_dt, "duration": duration,
-                "start_soc": s_soc, "end_soc": e_soc,
-                "energy_kwh": energy, "avg_power": round(avg_pwr, 1) if avg_pwr else None,
-                "charge_type": charge_type, "cost": cost,
-            })
+        elif _is_active(prev or "") and not active and session_start:
+            s = _build_session(conn, session_start, ts_str)
+            if s:
+                sessions.append(s)
+                state_intervals.append((session_start, ts_str))
             session_start = None
-        prev = state
+        prev = raw_state
 
+    # ── Fallback: power-based detection for sessions with no state entries ──────
+    pwr_rows = conn.execute(
+        f"SELECT timestamp, CAST(payload AS REAL) FROM messages "
+        f"WHERE topic LIKE '%{VIN}/charging/power' ORDER BY timestamp"
+    ).fetchall()
+
+    pwr_start = None
+    for i, (ts_str, pwr) in enumerate(pwr_rows):
+        in_state_session = any(a <= ts_str <= b for a, b in state_intervals)
+        if pwr and pwr > 0 and pwr_start is None and not in_state_session:
+            pwr_start = ts_str
+        elif (pwr is None or pwr == 0) and pwr_start is not None:
+            if not any(a <= pwr_start <= b for a, b in state_intervals):
+                s = _build_session(conn, pwr_start, ts_str)
+                if s:
+                    sessions.append(s)
+            pwr_start = None
+
+    sessions.sort(key=lambda s: s["start"])
     return sessions
 
 
@@ -220,6 +266,7 @@ state_labels = {
     "off": "Inaktiv", "charging": "⚡ Lädt", "invalid": "—",
     "conservation": "🔒 Erhaltung", "readyForCharging": "🟡 Bereit",
     "charge_state_charging": "⚡ Lädt",
+    "charge_state_charging_hv_battery": "⚡ Lädt",
     "charge_state_conservation_charging": "⚡ Erhaltung",
     "charge_state_conserving": "⚡ Erhaltung",
     "charge_state_ready_for_charging": "🟡 Bereit",
