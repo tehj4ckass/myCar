@@ -447,7 +447,7 @@ with h_left:
 with h_right:
     btn_col, cap_col = st.columns([1, 4])
     with btn_col:
-        if st.button("↺ Refresh"):
+        if st.button("↺ Refresh", help="Daten aktualisieren"):
             st.rerun()
     with cap_col:
         if last_update:
