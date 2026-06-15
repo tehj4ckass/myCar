@@ -28,6 +28,8 @@ def init_db():
             payload TEXT
         )
     ''')
+    db_conn.execute('CREATE INDEX IF NOT EXISTS idx_messages_topic_timestamp ON messages (topic, timestamp DESC)')
+    db_conn.execute('CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages (timestamp)')
     db_conn.commit()
 
 

@@ -1,0 +1,3 @@
+## 2024-05-17 - Missing Database Indexes Causing Full Table Scans
+**Learning:** The dashboard frequently queries the `messages` SQLite table using `topic` filtering and sorting by `timestamp` (e.g., `WHERE topic LIKE ... ORDER BY timestamp DESC`). Without indexing on these fields, SQLite performs full table scans for every metric fetch, creating a massive N+1 bottleneck as the database grows from high-frequency MQTT payload data.
+**Action:** Added compound index `(topic, timestamp DESC)` and `(timestamp)` to the `messages` table in `catcher.py` upon initialization to transform O(N) operations to O(log N). Always ensure time-series/log tables have compound indexes matching their primary query access patterns.
