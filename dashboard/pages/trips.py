@@ -79,12 +79,14 @@ def latest(suffix):
 def get_positions() -> pd.DataFrame:
     conn = get_conn()
     lat_rows = conn.execute(
-        f"SELECT timestamp, payload FROM messages "
-        f"WHERE topic = 'carconnectivity/0/garage/{VIN}/position/latitude' ORDER BY id"
+        "SELECT timestamp, payload FROM messages "
+        "WHERE topic = 'carconnectivity/0/garage/' || ? || '/position/latitude' ORDER BY id",
+        (VIN,)
     ).fetchall()
     lon_rows = conn.execute(
-        f"SELECT timestamp, payload FROM messages "
-        f"WHERE topic = 'carconnectivity/0/garage/{VIN}/position/longitude' ORDER BY id"
+        "SELECT timestamp, payload FROM messages "
+        "WHERE topic = 'carconnectivity/0/garage/' || ? || '/position/longitude' ORDER BY id",
+        (VIN,)
     ).fetchall()
     if not lat_rows or not lon_rows:
         return pd.DataFrame()
@@ -133,8 +135,9 @@ def _ts_diff_seconds(ts_ref: str, ts_other: str) -> float:
 
 def detect_trips():
     rows = get_conn().execute(
-        f"SELECT timestamp, payload FROM messages "
-        f"WHERE topic LIKE '%{VIN}/state' ORDER BY timestamp"
+        "SELECT timestamp, payload FROM messages "
+        "WHERE topic LIKE '%' || ? || '/state' ORDER BY timestamp",
+        (VIN,)
     ).fetchall()
     trips, trip_start, prev_state = [], None, None
 
@@ -152,15 +155,15 @@ def detect_trips():
                 # then fall back to last-before-t. If that value is >5 min stale, use
                 # first-after-t instead (avoids inheriting end-of-previous-trip odometer).
                 near = _conn.execute(
-                    f"SELECT payload, timestamp FROM messages WHERE topic LIKE '%{VIN}/odometer' "
-                    f"AND timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC LIMIT 1",
-                    (_adjust_ts(t, -2), _adjust_ts(t, 2)),
+                    "SELECT payload, timestamp FROM messages WHERE topic LIKE '%' || ? || '/odometer' "
+                    "AND timestamp >= ? AND timestamp <= ? ORDER BY timestamp ASC LIMIT 1",
+                    (VIN, _adjust_ts(t, -2), _adjust_ts(t, 2)),
                 ).fetchone()
                 if near:
                     return float(near[0])
                 before = _conn.execute(
-                    f"SELECT payload, timestamp FROM messages WHERE topic LIKE '%{VIN}/odometer' "
-                    f"AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (t,)
+                    "SELECT payload, timestamp FROM messages WHERE topic LIKE '%' || ? || '/odometer' "
+                    "AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (VIN, t)
                 ).fetchone()
                 if before:
                     age_s = _ts_diff_seconds(t, before[1])
@@ -168,8 +171,8 @@ def detect_trips():
                         return float(before[0])
                 # Stale before-reading: use first reading after t
                 after = _conn.execute(
-                    f"SELECT payload FROM messages WHERE topic LIKE '%{VIN}/odometer' "
-                    f"AND timestamp > ? ORDER BY timestamp ASC LIMIT 1", (t,)
+                    "SELECT payload FROM messages WHERE topic LIKE '%' || ? || '/odometer' "
+                    "AND timestamp > ? ORDER BY timestamp ASC LIMIT 1", (VIN, t)
                 ).fetchone()
                 return float(after[0]) if after else (float(before[0]) if before else None)
 
@@ -182,12 +185,12 @@ def detect_trips():
 
             def pos_at(t):
                 lat = conn.execute(
-                    f"SELECT payload FROM messages WHERE topic = 'carconnectivity/0/garage/{VIN}/position/latitude' "
-                    f"AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (t,)
+                    "SELECT payload FROM messages WHERE topic = 'carconnectivity/0/garage/' || ? || '/position/latitude' "
+                    "AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (VIN, t)
                 ).fetchone()
                 lon = conn.execute(
-                    f"SELECT payload FROM messages WHERE topic = 'carconnectivity/0/garage/{VIN}/position/longitude' "
-                    f"AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (t,)
+                    "SELECT payload FROM messages WHERE topic = 'carconnectivity/0/garage/' || ? || '/position/longitude' "
+                    "AND timestamp <= ? ORDER BY timestamp DESC LIMIT 1", (VIN, t)
                 ).fetchone()
                 try:
                     return (float(lat[0]), float(lon[0])) if lat and lon and lat[0] and lon[0] else (None, None)
