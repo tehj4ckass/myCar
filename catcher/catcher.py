@@ -28,6 +28,12 @@ def init_db():
             payload TEXT
         )
     ''')
+    # Add indexes for performance.
+    # The timestamp index allows O(1) resolution of the "ORDER BY timestamp DESC LIMIT 1"
+    # queries used extensively throughout the dashboard for latest values.
+    db_conn.execute('CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp)')
+    # The topic index speeds up exact topic matches and range scans.
+    db_conn.execute('CREATE INDEX IF NOT EXISTS idx_messages_topic ON messages(topic)')
     db_conn.commit()
 
 
