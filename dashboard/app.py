@@ -163,8 +163,8 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 st.sidebar.markdown(
-    f'<a href="/" target="_self" class="sidebar-header-link">'
-    f'<div class="car-img-wrap"><img src="data:image/webp;base64,{_img_b64}"></div>'
+    f'<a href="/" target="_self" class="sidebar-header-link" aria-label="Zur Startseite">'
+    f'<div class="car-img-wrap"><img src="data:image/webp;base64,{_img_b64}" alt="VW ID.3"></div>'
     f'</a>',
     unsafe_allow_html=True,
 )
