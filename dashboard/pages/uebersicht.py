@@ -1,3 +1,4 @@
+import html
 import os
 import sqlite3
 import statistics
@@ -188,11 +189,11 @@ def val(v, fmt=None, fallback="—"):
 
 
 def card(label, value, sub="", color="#f1f5f9"):
-    sub_html = f'<div class="card-sub">{sub}</div>' if sub else ""
+    sub_html = f'<div class="card-sub">{html.escape(str(sub))}</div>' if sub else ""
     return f"""
     <div class="card">
-        <div class="card-label">{label}</div>
-        <div class="card-value" style="color:{color};">{value}</div>
+        <div class="card-label">{html.escape(str(label))}</div>
+        <div class="card-value" style="color:{color};">{html.escape(str(value))}</div>
         {sub_html}
     </div>"""
 
@@ -223,10 +224,10 @@ def gauge_card(label, pct, sub=""):
         font-family="system-ui,-apple-system,sans-serif" letter-spacing="0.12em">AKKU</text>
     </svg>"""
 
-    sub_html = f'<div class="gauge-sub">{sub}</div>' if sub else ""
+    sub_html = f'<div class="gauge-sub">{html.escape(str(sub))}</div>' if sub else ""
     return f"""
     <div class="gauge-card">
-        <div class="gauge-label">{label}</div>
+        <div class="gauge-label">{html.escape(str(label))}</div>
         {svg}
         {sub_html}
     </div>"""
@@ -440,7 +441,7 @@ with h_left:
         pill = '<span class="status-pill pill-gray">○ Offline</span>'
     st.markdown(
         f'<div style="display:flex;align-items:center;gap:12px;padding:4px 0 16px 0;">'
-        f'<span style="font-size:1.6rem;font-weight:700;color:#f1f5f9;">⚡ {vehicle_label}</span>'
+        f'<span style="font-size:1.6rem;font-weight:700;color:#f1f5f9;">⚡ {html.escape(str(vehicle_label))}</span>'
         f'{pill}</div>',
         unsafe_allow_html=True,
     )

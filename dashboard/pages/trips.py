@@ -1,3 +1,4 @@
+import html
 import os
 import sqlite3
 from datetime import datetime, timezone
@@ -233,11 +234,11 @@ def detect_trips():
 
 
 def card(label, value, sub="", color="#f1f5f9"):
-    sub_html = f'<div class="card-sub">{sub}</div>' if sub else ""
+    sub_html = f'<div class="card-sub">{html.escape(str(sub))}</div>' if sub else ""
     return f"""
     <div class="card">
-        <div class="card-label">{label}</div>
-        <div class="card-value" style="color:{color};">{value}</div>
+        <div class="card-label">{html.escape(str(label))}</div>
+        <div class="card-value" style="color:{color};">{html.escape(str(value))}</div>
         {sub_html}
     </div>"""
 
