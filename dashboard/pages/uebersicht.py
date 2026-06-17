@@ -414,8 +414,9 @@ def monthly_stats(n: int = 6) -> list:
 name,         _ = latest("/name")
 model,        _ = latest("/model")
 conn_state,   _ = latest("garage/YOUR_VIN_HERE/connection_state")
-last_update,  _ = latest("last_update")
-batt_level,   _ = latest("drives/primary/level")
+last_poll,    _ = latest("last_update")           # last poll attempt (incl. errors)
+api_status, api_status_ts = latest("api_status")  # last connector result: "ok" | "HTTP 5xx" | …
+batt_level, last_data_ts = latest("drives/primary/level")  # last successful fetch
 batt_range,   _ = latest("drives/primary/range")
 odometer,     _ = latest("/odometer")
 vehicle_state,_ = latest("garage/YOUR_VIN_HERE/state")
@@ -425,33 +426,80 @@ target_lvl,   _ = latest("charging/settings/target_level")
 max_current,  _ = latest("charging/settings/maximum_current")
 est_done,     _ = latest("charging/estimated_date_reached")
 
+# ── API status ────────────────────────────────────────────────────────────────
+def _api_status(api_status: str | None, api_status_ts: str | None, last_data_ts: str | None):
+    """Returns (dot, label) from actual connector status + data freshness."""
+    now = datetime.now(timezone.utc)
+    def parse(ts):
+        if not ts:
+            return None
+        try:
+            dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except Exception:
+            return None
+
+    status_dt = parse(api_status_ts)
+    data_dt   = parse(last_data_ts)
+    status_age = (now - status_dt).total_seconds() / 60 if status_dt else None
+    data_age   = (now - data_dt).total_seconds() / 60   if data_dt   else None
+
+    # No data at all yet
+    if data_age is None:
+        return "⚫", "Keine Daten"
+
+    # We have a recent status report from the connector
+    if status_age is not None and status_age < 30:
+        if api_status == "ok":
+            return "🟢", "OK"
+        elif api_status:
+            detail = api_status  # e.g. "HTTP 500", "Auth-Fehler"
+            return "🔴", f"Keine Verbindung ({detail})"
+
+    # Fallback: derive from data age alone
+    if data_age < 30:
+        return "🟢", "OK"
+    if data_age < 240:
+        return "🟡", "Verzögert"
+    return "🔴", "Keine Verbindung"
+
+api_dot, api_label = _api_status(api_status, api_status_ts, last_data_ts)
+
 lvl        = float(batt_level) if batt_level else 0.0
 is_charging = charge_state not in (None, "off", "invalid", "")
 
 # ── Header ────────────────────────────────────────────────────────────────────
-h_left, h_right = st.columns([1, 1])
-with h_left:
-    vehicle_label = name or "VW ID.3"
-    if conn_state == "reachable":
-        pill = '<span class="status-pill pill-green">● Online</span>'
-    elif is_charging:
-        pill = '<span class="status-pill pill-orange">⚡ Lädt</span>'
-    else:
-        pill = '<span class="status-pill pill-gray">○ Offline</span>'
+vehicle_label = name or "VW ID.3"
+if conn_state == "reachable":
+    pill = '<span class="status-pill pill-green">● Online</span>'
+elif is_charging:
+    pill = '<span class="status-pill pill-orange">⚡ Lädt</span>'
+else:
+    pill = '<span class="status-pill pill-gray">○ Offline</span>'
+
+last_ok_str = last_data_ts[:19].replace("T", " ") if last_data_ts else "—"
+
+h_title, h_status = st.columns([3, 2], vertical_alignment="center")
+with h_title:
     st.markdown(
-        f'<div style="display:flex;align-items:center;gap:12px;padding:4px 0 16px 0;">'
+        f'<div style="display:flex;align-items:center;gap:12px;">'
         f'<span style="font-size:1.6rem;font-weight:700;color:#f1f5f9;">⚡ {vehicle_label}</span>'
         f'{pill}</div>',
         unsafe_allow_html=True,
     )
-with h_right:
-    btn_col, cap_col = st.columns([1, 4])
-    with btn_col:
-        if st.button("↺ Refresh"):
-            st.rerun()
-    with cap_col:
-        if last_update:
-            st.caption(f"Letzte Aktualisierung: {last_update[:19]}")
+with h_status:
+    st.markdown(
+        f'<div style="text-align:right;line-height:1.7;">'
+        f'<span style="font-size:0.72rem;color:#64748b;">Letzter Abruf&ensp;</span>'
+        f'<span style="font-size:0.8rem;color:#94a3b8;">{last_ok_str}</span><br>'
+        f'{api_dot}&ensp;<span style="font-size:0.78rem;color:#94a3b8;">API</span>'
+        f'&ensp;<span style="font-size:0.78rem;color:#e2e8f0;font-weight:500;">{api_label}</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+st.markdown('<div style="margin-bottom:12px;"></div>', unsafe_allow_html=True)
 
 # ── Row 1: Gauge + Info Cards ─────────────────────────────────────────────────
 c_gauge, c_range, c_odo, c_state = st.columns([1.6, 1, 1, 1])

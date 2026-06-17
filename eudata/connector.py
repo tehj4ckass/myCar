@@ -274,6 +274,7 @@ async def fetch_and_publish(client: EudaApiClient, mqtt_client: mqtt.Client) -> 
         _LOGGER.debug("  %s = %s", topic, value)
 
     _LOGGER.info("Published %d MQTT topics", len(topics))
+    pub(mqtt_client, "eudata/api_status", "ok")
     await push_abrp(session, data_points)
 
 
@@ -294,10 +295,17 @@ async def main() -> None:
             await fetch_and_publish(client, mqtt_client)
         except AuthError as e:
             _LOGGER.error("Authentication failed: %s", e)
+            pub(mqtt_client, "eudata/api_status", f"Auth-Fehler")
         except ApiError as e:
             _LOGGER.error("API error: %s", e)
+            # extract "HTTP 5xx" from message like "GET … -> HTTP 500"
+            import re as _re
+            m = _re.search(r"HTTP\s*(\d{3})", str(e))
+            code = f"HTTP {m.group(1)}" if m else "API-Fehler"
+            pub(mqtt_client, "eudata/api_status", code)
         except Exception as e:
             _LOGGER.exception("Unexpected error: %s", e)
+            pub(mqtt_client, "eudata/api_status", "Unbekannter Fehler")
         finally:
             await session.close()
 
