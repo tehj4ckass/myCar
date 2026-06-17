@@ -31,9 +31,9 @@
 
 ## Dashboard (German)
 
-Four pages, dark-themed, auto-refresh every 5 minutes:
+Three pages, dark-themed, auto-refresh every 5 minutes:
 
-- **Übersicht** — Live SOC gauge, range, odometer, charging status, monthly statistics (km driven, energy charged, cost estimate, battery SoH trend)
+- **Übersicht** — Live SOC gauge, range, odometer, charging status, API health indicator, monthly statistics (km driven, energy charged, cost estimate, battery SoH trend)
 - **Ladevorgänge** — Active charging state, session timeline chart, historical session log with energy/cost/duration
 - **Trips** — Trip history detected from vehicle state transitions, map visualization of historical GPS tracks
 
@@ -108,10 +108,11 @@ VW_USERNAME=your@email.com
 VW_PASSWORD=yourpassword
 MQTT_USER=mqttuser
 MQTT_PASSWORD=mqttpassword
+VIN=WVWZZZE000000000
 ABRP_TOKEN=your-abrp-token          # optional
 ```
 
-### 3. Start the stack
+### 4. Start the stack
 
 ```bash
 docker compose up -d
@@ -149,7 +150,8 @@ eudata/vehicles/<VIN>/charging/settings/target_level    # Target SOC %
 eudata/vehicles/<VIN>/charging/settings/maximum_current # A
 eudata/vehicles/<VIN>/charging/type              # ac | dc
 eudata/vehicles/<VIN>/garage/<VIN>/state         # parked | charging | driving
-eudata/last_update                               # ISO timestamp
+eudata/last_update                               # ISO timestamp of last poll attempt
+eudata/api_status                               # ok | HTTP 500 | Auth-Fehler | …
 ```
 
 ---
