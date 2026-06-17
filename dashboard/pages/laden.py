@@ -235,7 +235,7 @@ with h1:
     )
 with h2:
     st.write("")
-    if st.button("↺"):
+    if st.button("↺", help="Aktualisieren"):
         st.rerun()
 
 # ── Fetch current state ───────────────────────────────────────────────────────
