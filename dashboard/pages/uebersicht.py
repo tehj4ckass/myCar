@@ -1,3 +1,4 @@
+import html
 import os
 import sqlite3
 import statistics
@@ -188,6 +189,9 @@ def val(v, fmt=None, fallback="—"):
 
 
 def card(label, value, sub="", color="#f1f5f9"):
+    label = html.escape(str(label)) if label is not None else ""
+    value = html.escape(str(value)) if value is not None else ""
+    sub = html.escape(str(sub)) if sub is not None else ""
     sub_html = f'<div class="card-sub">{sub}</div>' if sub else ""
     return f"""
     <div class="card">
@@ -198,6 +202,8 @@ def card(label, value, sub="", color="#f1f5f9"):
 
 
 def gauge_card(label, pct, sub=""):
+    label = html.escape(str(label)) if label is not None else ""
+    sub = html.escape(str(sub)) if sub is not None else ""
     pct = max(0, min(100, float(pct)))
     color = "#4ade80" if pct > 20 else "#ffaa00" if pct > 10 else "#ef4444"
 
@@ -471,7 +477,7 @@ lvl        = float(batt_level) if batt_level else 0.0
 is_charging = charge_state not in (None, "off", "invalid", "")
 
 # ── Header ────────────────────────────────────────────────────────────────────
-vehicle_label = name or "VW ID.3"
+vehicle_label = html.escape(name or "VW ID.3")
 if conn_state == "reachable":
     pill = '<span class="status-pill pill-green">● Online</span>'
 elif is_charging:
@@ -479,7 +485,7 @@ elif is_charging:
 else:
     pill = '<span class="status-pill pill-gray">○ Offline</span>'
 
-last_ok_str = last_data_ts[:19].replace("T", " ") if last_data_ts else "—"
+last_ok_str = html.escape(last_data_ts[:19].replace("T", " ") if last_data_ts else "—")
 
 h_title, h_status = st.columns([3, 2], vertical_alignment="center")
 with h_title:
@@ -490,12 +496,13 @@ with h_title:
         unsafe_allow_html=True,
     )
 with h_status:
+    escaped_api_label = html.escape(api_label)
     st.markdown(
         f'<div style="text-align:right;line-height:1.7;">'
         f'<span style="font-size:0.72rem;color:#64748b;">Letzter Abruf&ensp;</span>'
         f'<span style="font-size:0.8rem;color:#94a3b8;">{last_ok_str}</span><br>'
         f'{api_dot}&ensp;<span style="font-size:0.78rem;color:#94a3b8;">API</span>'
-        f'&ensp;<span style="font-size:0.78rem;color:#e2e8f0;font-weight:500;">{api_label}</span>'
+        f'&ensp;<span style="font-size:0.78rem;color:#e2e8f0;font-weight:500;">{escaped_api_label}</span>'
         f'</div>',
         unsafe_allow_html=True,
     )

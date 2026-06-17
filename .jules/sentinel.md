@@ -1,0 +1,4 @@
+## 2024-05-18 - Prevent XSS in dynamic Streamlit HTML interpolation
+**Vulnerability:** The dashboard uses `st.markdown(..., unsafe_allow_html=True)` to render dynamic HTML content, but variable interpolation was vulnerable to Cross-Site Scripting (XSS) if data fetched from the SQLite database (e.g. MQTT payloads) is manipulated.
+**Learning:** Python's `html.escape` should be applied when combining untrusted variables with HTML strings in python. Specifically, care must be taken with truthiness checks (like `if value else ""`) during formatting, as this hides falsy values like `0` or `0.0`. It should be `if value is not None else ""` instead.
+**Prevention:** Always escape dynamic content directly before it is added to the HTML string. Use strict `is not None` checks when formatting numeric variables into strings to avoid dropping valid zero values.

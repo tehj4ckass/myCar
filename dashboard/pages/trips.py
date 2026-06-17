@@ -1,3 +1,4 @@
+import html
 import os
 import sqlite3
 from datetime import datetime, timezone
@@ -233,6 +234,9 @@ def detect_trips():
 
 
 def card(label, value, sub="", color="#f1f5f9"):
+    label = html.escape(str(label)) if label is not None else ""
+    value = html.escape(str(value)) if value is not None else ""
+    sub = html.escape(str(sub)) if sub is not None else ""
     sub_html = f'<div class="card-sub">{sub}</div>' if sub else ""
     return f"""
     <div class="card">
@@ -267,7 +271,7 @@ state_banners = {
     "charging":     ("⚡ Fahrzeug lädt", "info"),
     "ignition_on":  ("🔑 Zündung an", "info"),
 }
-msg, kind = state_banners.get(vehicle_state or "", (f"○ Status: {vehicle_state or 'unbekannt'}", "info"))
+msg, kind = state_banners.get(vehicle_state or "", (f"○ Status: {html.escape(str(vehicle_state)) if vehicle_state else 'unbekannt'}", "info"))
 getattr(st, kind)(msg)
 
 # ── Quick Stats ───────────────────────────────────────────────────────────────
