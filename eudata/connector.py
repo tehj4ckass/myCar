@@ -93,6 +93,7 @@ def _normalize_max_current(raw: str) -> str | None:
 # ── ABRP telemetry ────────────────────────────────────────────────────────────
 
 ABRP_API_URL = "https://api.iternio.com/1/tlm/send"
+ABRP_API_KEY = os.environ.get("ABRP_API_KEY", "")
 
 async def push_abrp(session: aiohttp.ClientSession, data_points: list[dict]) -> None:
     if not ABRP_TOKEN:
@@ -121,15 +122,19 @@ async def push_abrp(session: aiohttp.ClientSession, data_points: list[dict]) -> 
     try:
         async with session.post(
             ABRP_API_URL,
-            params={"token": ABRP_TOKEN},
+            params={"api_key": ABRP_API_KEY, "token": ABRP_TOKEN},
             json={"tlm": tlm},
             timeout=aiohttp.ClientTimeout(total=10),
         ) as resp:
-            body = await resp.json()
-            if body.get("status") == "ok":
-                _LOGGER.info("ABRP: telemetry sent (SOC=%.0f%%, charging=%s)", tlm["soc"], bool(is_charging))
+            if resp.content_type == "application/json":
+                body = await resp.json()
+                if body.get("status") == "ok":
+                    _LOGGER.info("ABRP: telemetry sent (SOC=%.0f%%, charging=%s)", tlm["soc"], bool(is_charging))
+                else:
+                    _LOGGER.warning("ABRP: unexpected response: %s", body)
             else:
-                _LOGGER.warning("ABRP: unexpected response: %s", body)
+                text = await resp.text()
+                _LOGGER.warning("ABRP: HTTP %s — %s", resp.status, text[:200])
     except Exception as e:
         _LOGGER.warning("ABRP: push failed: %s", e)
 
@@ -230,7 +235,7 @@ def build_topics(vin: str, nickname: str, data_points: list[dict]) -> dict[str, 
 
 # ── Main loop ──────────────────────────────────────────────────────────────────
 
-async def fetch_and_publish(client: EudaApiClient, mqtt_client: mqtt.Client) -> None:
+async def fetch_and_publish(client: EudaApiClient, mqtt_client: mqtt.Client, session: aiohttp.ClientSession) -> None:
     """One fetch-and-publish cycle."""
     vehicles = await client.async_list_vehicles()
     if not vehicles:
@@ -292,7 +297,7 @@ async def main() -> None:
         )
         client = EudaApiClient(session, VW_EMAIL, VW_PASSWORD)
         try:
-            await fetch_and_publish(client, mqtt_client)
+            await fetch_and_publish(client, mqtt_client, session)
         except AuthError as e:
             _LOGGER.error("Authentication failed: %s", e)
             pub(mqtt_client, "eudata/api_status", f"Auth-Fehler")

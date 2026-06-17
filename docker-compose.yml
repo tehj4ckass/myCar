@@ -31,6 +31,7 @@ services:
       - MQTT_PASSWORD=${MQTT_PASSWORD}
       - POLL_INTERVAL_SECONDS=900
       - ABRP_TOKEN=${ABRP_TOKEN}
+      - ABRP_API_KEY=${ABRP_API_KEY}
 
   vwcarnet:
     build: ./vwcarnet
