@@ -233,8 +233,8 @@ Used only for the cost display in the Ladevorgänge and Übersicht pages — adj
 
 | File | Lines | Values |
 |---|---|---|
-| `dashboard/pages/uebersicht.py` | 13–14 | `COST_AC = 0.25` · `COST_DC = 0.65` (€/kWh) |
-| `dashboard/pages/laden.py` | 13–14 | `COST_AC = 0.15` · `COST_DC = 0.65` (€/kWh) |
+| `dashboard/pages/uebersicht.py` | 13–14 | `COST_AC = 0.25` · `COST_DC = 0.60` (€/kWh) |
+| `dashboard/pages/laden.py` | 13–14 | `COST_AC = 0.25` · `COST_DC = 0.60` (€/kWh) |
 
 ### Max AC charging current (eudata connector)
 
