@@ -94,6 +94,7 @@ def latest(suffix):
     return (row[0], row[1]) if row else (None, None)
 
 
+@st.cache_data(ttl=300)
 def history(suffix, limit=2000):
     rows = get_conn().execute(
         "SELECT timestamp, payload FROM messages WHERE topic LIKE ? ORDER BY id ASC LIMIT ?",
@@ -170,6 +171,7 @@ def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
     }
 
 
+@st.cache_data(ttl=300)
 def detect_sessions():
     conn = get_conn()
 
