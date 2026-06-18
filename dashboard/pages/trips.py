@@ -251,7 +251,7 @@ with h1:
     )
 with h2:
     st.write("")
-    if st.button("↺"):
+    if st.button("↺", help="Ansicht aktualisieren"):
         st.rerun()
 
 # ── Data ──────────────────────────────────────────────────────────────────────
