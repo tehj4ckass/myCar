@@ -1,4 +1,5 @@
 import os
+import html
 import sqlite3
 import statistics
 from datetime import datetime, timezone
@@ -188,6 +189,9 @@ def val(v, fmt=None, fallback="—"):
 
 
 def card(label, value, sub="", color="#f1f5f9"):
+    label = html.escape(str(label)) if label is not None else ""
+    value = html.escape(str(value)) if value is not None else ""
+    sub = html.escape(str(sub)) if sub is not None else ""
     sub_html = f'<div class="card-sub">{sub}</div>' if sub else ""
     return f"""
     <div class="card">
@@ -223,6 +227,9 @@ def gauge_card(label, pct, sub=""):
         font-family="system-ui,-apple-system,sans-serif" letter-spacing="0.12em">AKKU</text>
     </svg>"""
 
+
+    label = html.escape(str(label)) if label is not None else ""
+    sub = html.escape(str(sub)) if sub is not None else ""
     sub_html = f'<div class="gauge-sub">{sub}</div>' if sub else ""
     return f"""
     <div class="gauge-card">
@@ -485,7 +492,7 @@ h_title, h_status = st.columns([3, 2], vertical_alignment="center")
 with h_title:
     st.markdown(
         f'<div style="display:flex;align-items:center;gap:12px;">'
-        f'<span style="font-size:1.6rem;font-weight:700;color:#f1f5f9;">⚡ {vehicle_label}</span>'
+        f'<span style="font-size:1.6rem;font-weight:700;color:#f1f5f9;">⚡ {html.escape(str(vehicle_label)) if vehicle_label is not None else ""}</span>'
         f'{pill}</div>',
         unsafe_allow_html=True,
     )
@@ -493,9 +500,9 @@ with h_status:
     st.markdown(
         f'<div style="text-align:right;line-height:1.7;">'
         f'<span style="font-size:0.72rem;color:#64748b;">Letzter Abruf&ensp;</span>'
-        f'<span style="font-size:0.8rem;color:#94a3b8;">{last_ok_str}</span><br>'
+        f'<span style="font-size:0.8rem;color:#94a3b8;">{html.escape(str(last_ok_str)) if last_ok_str is not None else ""}</span><br>'
         f'{api_dot}&ensp;<span style="font-size:0.78rem;color:#94a3b8;">API</span>'
-        f'&ensp;<span style="font-size:0.78rem;color:#e2e8f0;font-weight:500;">{api_label}</span>'
+        f'&ensp;<span style="font-size:0.78rem;color:#e2e8f0;font-weight:500;">{html.escape(str(api_label)) if api_label is not None else ""}</span>'
         f'</div>',
         unsafe_allow_html=True,
     )
