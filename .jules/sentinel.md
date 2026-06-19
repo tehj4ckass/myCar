@@ -1,0 +1,4 @@
+## 2026-03-24 - SQL Injection via Environment Variable Interpolation
+**Vulnerability:** SQL injection vulnerability found in Streamlit dashboard (`dashboard/pages/laden.py`, `dashboard/pages/trips.py`) where the `VIN` environment variable was interpolated directly into SQL queries using f-strings (e.g. `f"SELECT ... WHERE topic LIKE '%{VIN}/...'"`).
+**Learning:** Even environment variables or seemingly safe configuration values should never be interpolated directly into SQL queries using f-strings, as they can be vectors for SQL injection.
+**Prevention:** Always use parameterized SQL queries using the SQLite standard placeholder `?` combined with string concatenation functions provided by SQL (e.g. `LIKE '%' || ? || '/...'`) to ensure that all variable substitutions are handled safely by the database engine.
