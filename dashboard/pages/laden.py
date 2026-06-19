@@ -94,7 +94,9 @@ def latest(suffix):
     return (row[0], row[1]) if row else (None, None)
 
 
-def history(suffix, limit=2000):
+@st.cache_data(ttl=300)
+def history(suffix: str, limit: int = 2000) -> pd.DataFrame:
+    """Fetches and caches time series data to prevent redundant DB hits on re-renders."""
     rows = get_conn().execute(
         "SELECT timestamp, payload FROM messages WHERE topic LIKE ? ORDER BY id ASC LIMIT ?",
         (f"%{suffix}", limit),
@@ -170,7 +172,9 @@ def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
     }
 
 
-def detect_sessions():
+@st.cache_data(ttl=300)
+def detect_sessions() -> list:
+    """Detects and caches charging sessions to avoid expensive N+1 queries during re-renders."""
     conn = get_conn()
 
     # ── Primary: state-transition based detection ──────────────────────────────

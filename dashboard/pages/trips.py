@@ -76,7 +76,9 @@ def latest(suffix):
     return (row[0], row[1]) if row else (None, None)
 
 
+@st.cache_data(ttl=300)
 def get_positions() -> pd.DataFrame:
+    """Fetches and caches GPS positions to prevent redundant DB hits on re-renders."""
     conn = get_conn()
     lat_rows = conn.execute(
         f"SELECT timestamp, payload FROM messages "
@@ -131,7 +133,9 @@ def _ts_diff_seconds(ts_ref: str, ts_other: str) -> float:
         return 99999
 
 
-def detect_trips():
+@st.cache_data(ttl=300)
+def detect_trips() -> list:
+    """Detects and caches completed trips to avoid expensive N+1 queries during re-renders."""
     rows = get_conn().execute(
         f"SELECT timestamp, payload FROM messages "
         f"WHERE topic LIKE '%{VIN}/state' ORDER BY timestamp"

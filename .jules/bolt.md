@@ -1,0 +1,3 @@
+## 2024-06-25 - Streamlit N+1 queries in event reconstruction
+**Learning:** Streamlit's architecture re-runs the entire script on every user interaction or auto-refresh. This codebase reconstructs charging sessions and trips dynamically from raw MQTT event streams using many smaller queries per event (an N+1 pattern). Without caching, this becomes incredibly slow as the database grows, blocking the main thread on every render.
+**Action:** Always wrap data aggregation functions (like `detect_sessions` or `detect_trips`) and time series history fetches in `@st.cache_data(ttl=300)` to ensure they only re-run at the same cadence as the dashboard's `st_autorefresh` interval (5 mins), avoiding massive redundant compute on simple UI updates.
