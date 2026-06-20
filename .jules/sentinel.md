@@ -1,0 +1,4 @@
+## 2026-03-24 - Fix XSS in Streamlit Custom Components
+**Vulnerability:** The dashboard uses custom HTML cards and gauge components rendered via `st.markdown(..., unsafe_allow_html=True)`. However, the inputs (`label`, `value`, `sub`, `color`, etc.) were not sanitized before being injected into the HTML string, posing a Cross-Site Scripting (XSS) risk.
+**Learning:** When using `unsafe_allow_html=True` in Streamlit to render custom UI elements with dynamic data (even internal data, for defense-in-depth), all variable inputs must be explicitly sanitized. Additionally, when using `html.escape()`, strict `None` checks are necessary to prevent hiding valid falsy values (like `0` or `0.0`).
+**Prevention:** Always wrap dynamic variables in `html.escape(str(var) if var is not None else "")` when constructing HTML strings for Streamlit components that use `unsafe_allow_html=True`.

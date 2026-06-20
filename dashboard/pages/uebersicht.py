@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import html
 import statistics
 from datetime import datetime, timezone
 
@@ -188,11 +189,15 @@ def val(v, fmt=None, fallback="—"):
 
 
 def card(label, value, sub="", color="#f1f5f9"):
-    sub_html = f'<div class="card-sub">{sub}</div>' if sub else ""
+    safe_label = html.escape(str(label) if label is not None else "")
+    safe_value = html.escape(str(value) if value is not None else "")
+    safe_sub = html.escape(str(sub) if sub is not None else "")
+    safe_color = html.escape(str(color) if color is not None else "#f1f5f9")
+    sub_html = f'<div class="card-sub">{safe_sub}</div>' if safe_sub else ""
     return f"""
     <div class="card">
-        <div class="card-label">{label}</div>
-        <div class="card-value" style="color:{color};">{value}</div>
+        <div class="card-label">{safe_label}</div>
+        <div class="card-value" style="color:{safe_color};">{safe_value}</div>
         {sub_html}
     </div>"""
 
@@ -206,6 +211,9 @@ def gauge_card(label, pct, sub=""):
     arc  = circ * 0.75
     gap  = circ - arc
     filled = pct / 100 * arc
+
+    safe_label = html.escape(str(label) if label is not None else "")
+    safe_sub = html.escape(str(sub) if sub is not None else "")
 
     svg = f"""
     <svg viewBox="0 0 120 110" style="width:100%;max-width:190px;height:auto;display:block;margin:0 auto;">
@@ -223,10 +231,10 @@ def gauge_card(label, pct, sub=""):
         font-family="system-ui,-apple-system,sans-serif" letter-spacing="0.12em">AKKU</text>
     </svg>"""
 
-    sub_html = f'<div class="gauge-sub">{sub}</div>' if sub else ""
+    sub_html = f'<div class="gauge-sub">{safe_sub}</div>' if safe_sub else ""
     return f"""
     <div class="gauge-card">
-        <div class="gauge-label">{label}</div>
+        <div class="gauge-label">{safe_label}</div>
         {svg}
         {sub_html}
     </div>"""
