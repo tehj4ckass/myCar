@@ -76,6 +76,7 @@ def latest(suffix):
     return (row[0], row[1]) if row else (None, None)
 
 
+@st.cache_data(ttl=300)
 def get_positions() -> pd.DataFrame:
     conn = get_conn()
     lat_rows = conn.execute(
@@ -131,6 +132,7 @@ def _ts_diff_seconds(ts_ref: str, ts_other: str) -> float:
         return 99999
 
 
+@st.cache_data(ttl=300)
 def detect_trips():
     rows = get_conn().execute(
         f"SELECT timestamp, payload FROM messages "
