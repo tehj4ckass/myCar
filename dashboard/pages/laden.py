@@ -170,6 +170,7 @@ def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
     }
 
 
+@st.cache_data(ttl=300)
 def detect_sessions():
     conn = get_conn()
 
