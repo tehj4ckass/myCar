@@ -1,0 +1,3 @@
+## 2026-06-22 - Optimizing Streamlit Re-renders with N+1 Query Patterns
+**Learning:** Streamlit reruns the entire script on every user interaction (like changing tabs or hovering over a chart). When complex analytical functions (like `detect_sessions` and `detect_trips`) that perform N+1 queries to an SQLite database are left uncached, they block the main thread and cause severe UI lag on every render.
+**Action:** Always wrap expensive database-driven data processing functions in Streamlit with `@st.cache_data`. Ensure the TTL matches the dashboard's auto-refresh interval (e.g., `ttl=300` for a 5-minute refresh) and that functions instantiate their own DB connections internally so the returned data (like DataFrames and lists) is cacheable.

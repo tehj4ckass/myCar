@@ -86,6 +86,9 @@ def get_conn():
     return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
 
 
+# Cache latest status to ensure consistency with other historical cached metrics.
+# TTL set to 60s to ensure data freshness while reducing UI lag.
+@st.cache_data(ttl=60)
 def latest(suffix):
     row = get_conn().execute(
         "SELECT payload, timestamp FROM messages WHERE topic LIKE ? ORDER BY timestamp DESC LIMIT 1",
@@ -94,6 +97,9 @@ def latest(suffix):
     return (row[0], row[1]) if row else (None, None)
 
 
+# Cache expensive DB queries to prevent main thread blocking on Streamlit re-renders.
+# TTL set to 60s to ensure data freshness while reducing UI lag.
+@st.cache_data(ttl=60)
 def history(suffix, limit=2000):
     rows = get_conn().execute(
         "SELECT timestamp, payload FROM messages WHERE topic LIKE ? ORDER BY id ASC LIMIT ?",
@@ -170,6 +176,9 @@ def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
     }
 
 
+# Cache expensive N+1 query detection logic to avoid UI lag.
+# TTL set to 60s to ensure data freshness while reducing UI lag.
+@st.cache_data(ttl=60)
 def detect_sessions():
     conn = get_conn()
 

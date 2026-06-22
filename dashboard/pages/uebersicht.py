@@ -167,6 +167,9 @@ def get_conn():
     return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
 
 
+# Cache latest status to ensure consistency with other historical cached metrics.
+# TTL set to 60s to ensure data freshness while reducing UI lag.
+@st.cache_data(ttl=60)
 def latest(topic_suffix: str):
     try:
         row = get_conn().execute(
