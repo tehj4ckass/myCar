@@ -413,13 +413,13 @@ def monthly_stats(n: int = 6) -> list:
 # ── Fetch live data ───────────────────────────────────────────────────────────
 name,         _ = latest("/name")
 model,        _ = latest("/model")
-conn_state,   _ = latest("garage/YOUR_VIN_HERE/connection_state")
+conn_state,   _ = latest(f"garage/{VIN}/connection_state")
 last_poll,    _ = latest("last_update")           # last poll attempt (incl. errors)
 api_status, api_status_ts = latest("api_status")  # last connector result: "ok" | "HTTP 5xx" | …
 batt_level, last_data_ts = latest("drives/primary/level")  # last successful fetch
 batt_range,   _ = latest("drives/primary/range")
 odometer,     _ = latest("/odometer")
-vehicle_state,_ = latest("garage/YOUR_VIN_HERE/state")
+vehicle_state,_ = latest(f"garage/{VIN}/state")
 charge_state, _ = latest("charging/state")
 charge_power, _ = latest("charging/power")
 target_lvl,   _ = latest("charging/settings/target_level")
