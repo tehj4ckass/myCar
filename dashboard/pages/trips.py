@@ -76,6 +76,9 @@ def latest(suffix):
     return (row[0], row[1]) if row else (None, None)
 
 
+# ⚡ Bolt: Cache position fetching to prevent massive query execution during Streamlit re-renders.
+# Expected impact: Dramatically reduces map load times and database stress.
+@st.cache_data(ttl=60)
 def get_positions() -> pd.DataFrame:
     conn = get_conn()
     lat_rows = conn.execute(
@@ -131,6 +134,9 @@ def _ts_diff_seconds(ts_ref: str, ts_other: str) -> float:
         return 99999
 
 
+# ⚡ Bolt: Cache expensive trip detection parsing to avoid rebuilding history on every interaction.
+# Expected impact: Reduces O(N) trip detection processing time, yielding instant tab switches.
+@st.cache_data(ttl=60)
 def detect_trips():
     rows = get_conn().execute(
         f"SELECT timestamp, payload FROM messages "

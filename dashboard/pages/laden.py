@@ -94,6 +94,9 @@ def latest(suffix):
     return (row[0], row[1]) if row else (None, None)
 
 
+# ⚡ Bolt: Cache historical data fetching to prevent N+1 queries during Streamlit re-renders.
+# Expected impact: Significantly reduces UI lag and database load when toggling tabs or auto-refreshing.
+@st.cache_data(ttl=60)
 def history(suffix, limit=2000):
     rows = get_conn().execute(
         "SELECT timestamp, payload FROM messages WHERE topic LIKE ? ORDER BY id ASC LIMIT ?",
@@ -170,6 +173,9 @@ def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
     }
 
 
+# ⚡ Bolt: Cache expensive session detection algorithm to prevent recalculating on every UI interaction.
+# Expected impact: Eliminates a major O(n) blocking operation during re-renders, making the UI snappy.
+@st.cache_data(ttl=60)
 def detect_sessions():
     conn = get_conn()
 
