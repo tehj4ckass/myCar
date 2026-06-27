@@ -140,8 +140,8 @@ def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
     energy = round((e_soc - s_soc) * BATTERY_KWH / 100, 2) if s_soc and e_soc else None
 
     pwr_rows = conn.execute(
-        f"SELECT payload FROM messages WHERE topic LIKE '%{VIN}/charging/power' "
-        f"AND timestamp BETWEEN ? AND ?", (session_start, ts_str),
+        "SELECT payload FROM messages WHERE topic LIKE '%' || ? || '/charging/power' "
+        "AND timestamp BETWEEN ? AND ?", (VIN, session_start, ts_str),
     ).fetchall()
     avg_pwr = (
         sum(float(r[0]) for r in pwr_rows if r[0]) / len(pwr_rows)
@@ -149,8 +149,8 @@ def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
     )
 
     type_rows = conn.execute(
-        f"SELECT payload FROM messages WHERE topic LIKE '%{VIN}/charging/type' "
-        f"AND timestamp BETWEEN ? AND ?", (session_start, ts_str),
+        "SELECT payload FROM messages WHERE topic LIKE '%' || ? || '/charging/type' "
+        "AND timestamp BETWEEN ? AND ?", (VIN, session_start, ts_str),
     ).fetchall()
     def _norm_type(v):
         v = v.strip().lower()
@@ -175,7 +175,8 @@ def detect_sessions():
 
     # ── Primary: state-transition based detection ──────────────────────────────
     state_rows = conn.execute(
-        f"SELECT timestamp, payload FROM messages WHERE topic LIKE '%{VIN}/charging/state' ORDER BY timestamp"
+        "SELECT timestamp, payload FROM messages WHERE topic LIKE '%' || ? || '/charging/state' ORDER BY timestamp",
+        (VIN,)
     ).fetchall()
 
     sessions = []
@@ -196,8 +197,9 @@ def detect_sessions():
 
     # ── Fallback: power-based detection for sessions with no state entries ──────
     pwr_rows = conn.execute(
-        f"SELECT timestamp, CAST(payload AS REAL) FROM messages "
-        f"WHERE topic LIKE '%{VIN}/charging/power' ORDER BY timestamp"
+        "SELECT timestamp, CAST(payload AS REAL) FROM messages "
+        "WHERE topic LIKE '%' || ? || '/charging/power' ORDER BY timestamp",
+        (VIN,)
     ).fetchall()
 
     pwr_start = None
