@@ -1,0 +1,4 @@
+
+## 2024-05-18 - Streamlit Dashboard Debounced Caching
+**Learning:** Streamlit apps utilizing `streamlit_autorefresh` (like in `app.py` or pages with periodic updates) combined with frequent UI interactions can cause severe SQLite database polling overhead. Queries made by functions without caching are re-run on every script execution. Furthermore, `sqlite3.Connection` objects cannot be cached by Streamlit's `@st.cache_data`.
+**Action:** Use `@st.cache_data(ttl=2)` as a debounce mechanism for frequent query functions (e.g., `latest`, `history`, `detect_trips`). This allows the app to feel near-real-time without overloading the database. Ensure that the database connection is instantiated *inside* the cached function (e.g., `get_conn()`) and not passed as an argument or cached directly. Also, do not overwrite existing long TTLs (like `ttl=300`) with short debouncing TTLs.

@@ -167,6 +167,11 @@ def get_conn():
     return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
 
 
+# PERFORMANCE OPTIMIZATION (Bolt):
+# Debounce frequent SQLite database queries to mitigate overhead during rapid UI interactions
+# and autorefresh cycles. Keeps data fresh within 2 seconds without hammering the DB.
+# Expected impact: Dramatically reduces disk I/O and CPU usage during UI state changes.
+@st.cache_data(ttl=2)
 def latest(topic_suffix: str):
     try:
         row = get_conn().execute(
