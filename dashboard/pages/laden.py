@@ -86,7 +86,12 @@ def get_conn():
     return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
 
 
+@st.cache_data(ttl=2)
 def latest(suffix):
+    """
+    Fetch the latest payload and timestamp for a given topic suffix.
+    Cached for 2 seconds to debounce rapid Streamlit UI interactions and prevent DB query spikes.
+    """
     row = get_conn().execute(
         "SELECT payload, timestamp FROM messages WHERE topic LIKE ? ORDER BY timestamp DESC LIMIT 1",
         (f"%{suffix}",),
@@ -94,7 +99,12 @@ def latest(suffix):
     return (row[0], row[1]) if row else (None, None)
 
 
+@st.cache_data(ttl=2)
 def history(suffix, limit=2000):
+    """
+    Fetch historical data for a given topic suffix.
+    Cached for 2 seconds to debounce rapid Streamlit UI interactions.
+    """
     rows = get_conn().execute(
         "SELECT timestamp, payload FROM messages WHERE topic LIKE ? ORDER BY id ASC LIMIT ?",
         (f"%{suffix}", limit),
@@ -170,7 +180,12 @@ def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
     }
 
 
+@st.cache_data(ttl=2)
 def detect_sessions():
+    """
+    Detect charging sessions from database messages.
+    Cached for 2 seconds to debounce rapid Streamlit UI interactions and prevent DB query spikes.
+    """
     conn = get_conn()
 
     # ── Primary: state-transition based detection ──────────────────────────────

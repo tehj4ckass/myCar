@@ -167,7 +167,12 @@ def get_conn():
     return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
 
 
+@st.cache_data(ttl=2)
 def latest(topic_suffix: str):
+    """
+    Fetch the latest payload and timestamp for a given topic suffix.
+    Cached for 2 seconds to debounce rapid Streamlit UI interactions and prevent DB query spikes.
+    """
     try:
         row = get_conn().execute(
             "SELECT payload, timestamp FROM messages WHERE topic LIKE ? ORDER BY timestamp DESC LIMIT 1",
