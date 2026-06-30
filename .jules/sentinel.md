@@ -1,0 +1,4 @@
+## 2026-06-30 - Environment Variable SQL Injection in SQLite
+**Vulnerability:** The codebase had CRITICAL SQL injection vulnerabilities in `dashboard/pages/laden.py` and `dashboard/pages/trips.py`. It used f-strings to directly interpolate the `VIN` environment variable into SQLite queries (e.g., `f"SELECT ... WHERE topic LIKE '%{VIN}/state'"`).
+**Learning:** Even data sourced from environment variables must be treated as untrusted and can be vectors for SQL injection. Furthermore, when parameterizing `LIKE` clauses in SQLite, you cannot put parameter placeholders directly inside string literals (e.g., `'%?%'`).
+**Prevention:** Always use parameterized queries for all dynamic inputs, including environment variables. For `LIKE` clauses or string matching in SQLite, use string concatenation with the parameter (e.g., `"SELECT ... WHERE topic LIKE '%' || ? || '/state'"` with a `(VIN,)` tuple) instead of f-strings.
