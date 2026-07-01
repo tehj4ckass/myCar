@@ -86,6 +86,7 @@ def get_conn():
     return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
 
 
+@st.cache_data(ttl=2)
 def latest(suffix):
     row = get_conn().execute(
         "SELECT payload, timestamp FROM messages WHERE topic LIKE ? ORDER BY timestamp DESC LIMIT 1",
@@ -94,6 +95,7 @@ def latest(suffix):
     return (row[0], row[1]) if row else (None, None)
 
 
+@st.cache_data(ttl=2)
 def history(suffix, limit=2000):
     rows = get_conn().execute(
         "SELECT timestamp, payload FROM messages WHERE topic LIKE ? ORDER BY id ASC LIMIT ?",
@@ -170,6 +172,7 @@ def _build_session(conn, session_start: str, ts_str: str) -> dict | None:
     }
 
 
+@st.cache_data(ttl=2)
 def detect_sessions():
     conn = get_conn()
 

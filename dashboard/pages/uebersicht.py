@@ -167,6 +167,7 @@ def get_conn():
     return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
 
 
+@st.cache_data(ttl=2)
 def latest(topic_suffix: str):
     try:
         row = get_conn().execute(
